@@ -176,7 +176,7 @@ azd ai agent show --output json
 
 Expect `"status": "active"` (or `"deployed"`) and an `agent_endpoints` map. Inspect the selected service protocols in `azure.yaml`, then smoke-test:
 
-For LangChain / LangGraph calling the project's OpenAI endpoint, [verify `Foundry User` access or other project-scoped model inference access for the agent's identity](../create/references/langchain-langgraph-hosting.md#pre-smoke-test-rbac) before smoke testing or retrying `401 PermissionDenied`.
+For LangChain / LangGraph using the project's OpenAI endpoint, smoke-test without a role check by default. Follow [model inference RBAC](../create/references/langchain-langgraph-hosting.md#model-inference-rbac) to resolve known missing access before invoking, or to diagnose an explicit permission denial from the container's model call (e.g., `401 PermissionDenied`) before retrying.
 
 For the Responses or Invocations protocol, smoke-test with azd:
 
@@ -190,7 +190,7 @@ For a multi-protocol service, pass `--protocol` explicitly.
 
 For the Activity protocol, `azd ai agent invoke` won't work; follow [invoke](../invoke/invoke.md) to invoke the agent.
 
-Run one remote invocation only unless the user explicitly asked to test multi-turn/session behavior. A single successful response is enough for the deployment smoke test. Anything other than a completed/successful response -> run `azd ai agent doctor --output json`, then follow [troubleshoot](../troubleshoot/troubleshoot.md).
+Run one remote smoke test unless the user explicitly asked to test multi-turn/session behavior. If the hosted model call was denied as above, retry once after resolving access. For other non-completed responses, run `azd ai agent doctor --output json`, then follow [troubleshoot](../troubleshoot/troubleshoot.md).
 
 For hosted text agents, add one line to the deployment summary: if the project has Application Insights, traces take 1-5 minutes to appear, and the user can ask to verify or query them (routes to [trace](../trace/trace.md)).
 

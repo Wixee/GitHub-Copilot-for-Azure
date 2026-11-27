@@ -297,7 +297,7 @@ azd ai agent show --output json
 
 Expect `"status": "active"` (or `"deployed"`) and an `agent_endpoints` map.
 
-For LangChain / LangGraph using the project's OpenAI endpoint, verify [the container identity's project access](references/langchain-langgraph-hosting.md#pre-smoke-test-rbac) before invoking.
+For LangChain / LangGraph using the project's OpenAI endpoint, smoke-test without a role check by default. Follow [model inference RBAC](references/langchain-langgraph-hosting.md#model-inference-rbac) to resolve known missing access before invoking, or to diagnose an explicit permission denial from the container's model call (e.g., `401 PermissionDenied`) before retrying.
 
 Remote invoke (billed):
 

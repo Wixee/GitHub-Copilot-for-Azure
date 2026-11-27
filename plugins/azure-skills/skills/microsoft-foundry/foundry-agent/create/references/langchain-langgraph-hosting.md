@@ -111,18 +111,20 @@ model = ChatOpenAI(
 
 Use `langchain_azure_ai.tools.AzureAIProjectToolbox` and follow the [LangChain / LangGraph Toolbox integration](use-toolbox-in-hosted-agent.md#langchain--langgraph-sdk) for schema adaptation and user OAuth consent.
 
-## Pre-smoke-test RBAC
+## Model inference RBAC
 
-`ChatOpenAI` calls the project's OpenAI endpoint from inside the hosted container. Before remote smoke testing, check `Foundry User` for the **agent's managed identity**, not the deploy/invoke caller, at the project ARM scope ending in `Microsoft.CognitiveServices/accounts/<account>/projects/<project>`:
+`ChatOpenAI` calls the project's OpenAI endpoint from inside the hosted container using the **agent's managed identity**, not the deploy/invoke caller.
+
+- **Unknown access (default):** After a successful deploy, if remote verification is requested and inference access is not already known to be missing, start with one safe, short remote smoke test. A successful response is enough and does not require listing or granting roles.
+- **Known missing access:** Resolve access before invoking.
+- **Explicit model permission denial:** If the container's model call is explicitly denied (for example, `401 PermissionDenied` — not generic 401 caller/auth errors or rate limits), skip generic diagnostics and check effective inference access for the **agent's managed identity** at the project ARM scope ending in `Microsoft.CognitiveServices/accounts/<account>/projects/<project>` before retrying:
 
 ```bash
 az role assignment list --assignee "<agent-principal-id>" --scope "<project-arm-id>" --role "Foundry User" --include-inherited --output table
 ```
 
-If no `Foundry User` assignment is found, check whether another role grants the agent's managed identity model inference access. Only if that access is missing, have an authorized operator grant `Foundry User` at the project scope:
+If no `Foundry User` assignment appears, check whether another role already grants the container identity project-scoped model inference access. Inability to list role assignments is not evidence of missing access. Only if effective inference access is confirmed missing, have an authorized operator grant `Foundry User` at project scope, then retry:
 
 ```bash
 az role assignment create --assignee-object-id "<agent-principal-id>" --assignee-principal-type ServicePrincipal --scope "<project-arm-id>" --role "Foundry User"
 ```
-
-Do not invoke until effective access is confirmed. For `401 PermissionDenied` from the model call, recheck the same identity and scope before retrying.
